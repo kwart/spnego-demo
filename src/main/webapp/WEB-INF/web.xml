@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+
+	<display-name>secured-webapp</display-name>
+
+	<!-- Define the basename for a resource bundle for I18N -->
+	<context-param>
+		<param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
+		<param-value>org.jboss.test.web.securedwebapp.ApplicationResources</param-value>
+	</context-param>
+
+	<!-- Fallback locale if no bundles found for browser's preferred locale -->
+	<!-- Force a single locale using param-name 'javax.servlet.jsp.jstl.fmt.locale' -->
+	<context-param>
+		<param-name>javax.servlet.jsp.jstl.fmt.fallbackLocale</param-name>
+		<param-value>en</param-value>
+	</context-param>
+
+	<session-config>
+		<session-timeout>10</session-timeout>
+	</session-config>
+
+	<welcome-file-list>
+		<welcome-file>index.jsp</welcome-file>
+	</welcome-file-list>
+
+	<error-page>
+		<error-code>500</error-code>
+		<location>/error.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>400</error-code>
+		<location>/index.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>403</error-code>
+		<location>/403.jsp</location>
+	</error-page>
+	<error-page>
+		<error-code>404</error-code>
+		<location>/404.jsp</location>
+	</error-page>
+
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>Protect User data</web-resource-name>
+			<url-pattern>/user/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>Admin</role-name>
+			<role-name>User</role-name>
+		</auth-constraint>
+	</security-constraint>
+
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>Protect Admin Data</web-resource-name>
+			<url-pattern>/admin/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<role-name>Admin</role-name>
+		</auth-constraint>
+	</security-constraint>
+
+	<login-config>
+		<auth-method>FORM</auth-method>
+		<form-login-config>
+			<form-login-page>/login.jsp</form-login-page>
+			<form-error-page>/fail_login.jsp</form-error-page>
+		</form-login-config>
+	</login-config>
+
+<!-- 
+	<login-config>
+		<auth-method>BASIC</auth-method>
+		<realm-name>Secured kingdom</realm-name>
+	</login-config>
+ -->
+	
+	<security-role>
+		<role-name>Admin</role-name>
+	</security-role>
+	<security-role>
+		<role-name>User</role-name>
+	</security-role>
+</web-app>
