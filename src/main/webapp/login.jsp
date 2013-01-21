@@ -5,7 +5,7 @@
     <title><fmt:message key="login.title"/></title>
 </head>
 <body>
-<form method="post" id="loginForm" action="<c:url value="/j_security_check"/>">
+<form method="post" id="loginForm" action="j_security_check">
 <fieldset>
 <ul>
     <li>
