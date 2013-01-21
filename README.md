@@ -4,9 +4,11 @@ Simple Java web application template with the secured content.
 
 ## How to get it
 
-You need to have [git](http://git-scm.com/) installed
+You should have [git](http://git-scm.com/) installed
 
 	$ git clone git://github.com/kwart/secured-webapp-template.git
+
+or you can download [current sources as a zip file](https://github.com/kwart/secured-webapp-template/archive/master.zip)
 
 ## How to build it
 
