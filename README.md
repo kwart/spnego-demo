@@ -12,17 +12,15 @@ Demo application which shows, how to get Kerberos authentication working in JBbo
 
 You should have [git](http://git-scm.com/) installed
 
-	$ git clone git://github.com/kwart/secured-webapp-template.git secured-webapp
-	$ cd secured-webapp
-	$ git checkout origin/spnego-sample
+	$ git clone git://github.com/kwart/spnego-demo.git
 
-or you can download [current sources as a zip file](https://github.com/kwart/secured-webapp-template/archive/spnego-sample.zip)
+or you can download [current sources as a zip file](https://github.com/kwart/spnego-demo/archive/master.zip)
 
 ## How to build it
 
 You need to have [Maven](http://maven.apache.org/) installed
 
-	$ cd secured-webapp
+	$ cd spnego-demo
 	$ mvn clean package
 
 ## How to install it
