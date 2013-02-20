@@ -1,18 +1,6 @@
-<!--
-Add security domain to the JBosss AS standalone.xml:
-
-<security-domain name="web-tests" cache-type="default">
-	<authentication>
-		<login-module code="UsersRoles" flag="required"/>
-	</authentication>
-</security-domain>
-
-or use CLI (jboss-cli.sh):
-
-connect
-/subsystem=security/security-domain=web-tests:add(cache-type=default)
-/subsystem=security/security-domain=web-tests/authentication=classic:add(login-modules=[{"code"=>"UsersRoles", "flag"=>"required"}]) {allow-resource-service-restart=true}
--->
 <jboss-web>
-	<security-domain>web-tests</security-domain>
+	<security-domain>SPNEGO</security-domain>
+	<valve>
+		<class-name>org.jboss.security.negotiation.NegotiationAuthenticator</class-name>
+	</valve>
 </jboss-web>

@@ -5,43 +5,9 @@
 
 	<display-name>secured-webapp</display-name>
 
-	<!-- Define the basename for a resource bundle for I18N -->
-	<context-param>
-		<param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
-		<param-value>org.jboss.test.web.securedwebapp.ApplicationResources</param-value>
-	</context-param>
-
-	<!-- Fallback locale if no bundles found for browser's preferred locale -->
-	<!-- Force a single locale using param-name 'javax.servlet.jsp.jstl.fmt.locale' -->
-	<context-param>
-		<param-name>javax.servlet.jsp.jstl.fmt.fallbackLocale</param-name>
-		<param-value>en</param-value>
-	</context-param>
-
-	<session-config>
-		<session-timeout>10</session-timeout>
-	</session-config>
-
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
-
-	<error-page>
-		<error-code>500</error-code>
-		<location>/error.jsp</location>
-	</error-page>
-	<error-page>
-		<error-code>400</error-code>
-		<location>/index.jsp</location>
-	</error-page>
-	<error-page>
-		<error-code>403</error-code>
-		<location>/403.jsp</location>
-	</error-page>
-	<error-page>
-		<error-code>404</error-code>
-		<location>/404.jsp</location>
-	</error-page>
 
 	<security-constraint>
 		<web-resource-collection>
@@ -72,13 +38,6 @@
 		</form-login-config>
 	</login-config>
 
-<!-- 
-	<login-config>
-		<auth-method>BASIC</auth-method>
-		<realm-name>Secured kingdom</realm-name>
-	</login-config>
- -->
-	
 	<security-role>
 		<role-name>Admin</role-name>
 	</security-role>
