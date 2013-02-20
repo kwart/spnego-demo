@@ -1,47 +1,83 @@
-# Template for secured Java web applications
+# SPNEGO secured web application demo for JBoss AS 7.x
 
-Simple Java web application template with the secured content.
+Demo application which shows, how to get Kerberos authentication working in JBboss AS 7.x (or JBoss EAP 6.x)
 
-## How to get it
+## How does it work?
+
+ * Your web application defines dependency on `org.jboss.security.negotiation` AS module in `META-INF/jboss-deployment-structure.xml`
+ * Your web application defines `NegotiationAuthenticator` custom authenticator and a reference to a security domain used for clients authentication in `WEB-INF/jboss-web.xml`. The domain uses the `SPNEGOLoginModule` JAAS login module and it has name `SPNEGO` in this demo.
+ * The `SPNEGO` security domain references the second domain which is used for JBoss AS server authentication against a KDC. It uses `Krb5LoginModule` login module and its name is `host`.  
+
+## How to get the sources
 
 You should have [git](http://git-scm.com/) installed
 
-	$ git clone git://github.com/kwart/secured-webapp-template.git
+	$ git clone git://github.com/kwart/secured-webapp-template.git secured-webapp
+	$ cd secured-webapp
+	$ git checkout origin/spnego-sample
 
-or you can download [current sources as a zip file](https://github.com/kwart/secured-webapp-template/archive/master.zip)
+or you can download [current sources as a zip file](https://github.com/kwart/secured-webapp-template/archive/spnego-sample.zip)
 
 ## How to build it
 
 You need to have [Maven](http://maven.apache.org/) installed
 
-	$ cd secured-webapp-template
+	$ cd secured-webapp
 	$ mvn clean package
-
-If the target container doesn't include JSTL implementation, then set the `jstl` property while calling the Maven build
-
-	$ mvn clean package -Djstl
 
 ## How to install it
 
-Copy the produced `secured-webapp.war` from the `target` folder to the deployment folder of your container.
+### Configure your JBoss AS 7.x
+
+This demo application needs some additional security domains in the JBoss AS:
+ * `host` domain is used for JBoss AS server authentication against the KDC (Key Distribution Center)
+ * `SPNEGO` domain is used for client authentication against the JBoss AS
+  
+Start your AS:
+	
+	$ cd $JBOSS_HOME/bin
+	$ ./standalone.sh
+	
+Define the new security domains by using JBoss CLI (`jboss-cli.sh` / `jboss-cli.bat`):
+
+	$ cat << EOF > cli-commands.txt
+	/subsystem=security/security-domain=host:add(cache-type=default)
+	/subsystem=security/security-domain=host/authentication=classic:add( \
+		login-modules=[{"code"=>"Kerberos", "flag"=>"required", "module-options"=>[ \
+		("debug"=>"true"),\
+		("storeKey"=>"true"),\
+		("refreshKrb5Config"=>"true"),\
+		("useKeyTab"=>"true"),\
+		("doNotPrompt"=>"true"),\
+		("keyTab"=>"$JBOSS_HOME/http.keytab"),\
+		("principal"=>"HTTP/localhost@JBOSS.ORG")\
+	]}]) {allow-resource-service-restart=true}
+	
+	/subsystem=security/security-domain=SPNEGO:add(cache-type=default)
+	/subsystem=security/security-domain=SPNEGO/authentication=classic:add( \
+		login-modules=[{"code"=>"SPNEGO", "flag"=>"required", "module-options"=>[ \
+		("password-stacking"=>"useFirstPass"),\
+		("serverSecurityDomain"=>"host")\
+	]}]) {allow-resource-service-restart=true}
+	/subsystem=security/security-domain=SPNEGO/mapping=classic:add( \
+		mapping-modules=[{"code"=>"SimpleRoles", "type"=>"role", "module-options"=>[ \
+		("jduke@JBOSS.ORG"=>"Admin"),\
+		("hnelson@JBOSS.ORG"=>"User"),\
+	]}]) {allow-resource-service-restart=true}
+	
+	/system-property=java.security.krb5.conf:add(value="$JBOSS_HOME/krb5.conf")
+	/system-property=java.security.krb5.debug:add(value=true)
+	/system-property=jboss.security.disable.secdomain.option:add(value=true)
+	
+	:reload()
+	EOT
+	$ ./jboss-cli.sh -c --file=cli-commands.txt
+
+### Deploy the secured-webapp.war web application
+
+Copy the `target/secured-webapp.war` to the `$JBOSS_HOME/standalone/deployments`.
 
 Open the application URL in the browser. E.g. [http://localhost:8080/secured-webapp/](http://localhost:8080/secured-webapp/)
-
-### How to configure it on JBoss AS 7.x / EAP 6.x
-
-The JBoss specific deployment descriptor (WEB-INF/jboss-web.xml) refers to a `web-tests` security domain. You have to add it to your configuration.
-Define the new security domain, either by using JBoss CLI (`jboss-cli.sh` / `jboss-cli.bat`):
-
-	$ ./jboss-cli.sh -c '/subsystem=security/security-domain=web-tests:add(cache-type=default)'
-	$ ./jboss-cli.sh -c '/subsystem=security/security-domain=web-tests/authentication=classic:add(login-modules=[{"code"=>"UsersRoles", "flag"=>"required"}]) {allow-resource-service-restart=true}'
-
-or by editing `standalone/configuration/standalone.xml`, where you have to add a new child to the `<security-domains>` element
-
-	<security-domain name="web-tests" cache-type="default">
-		<authentication>
-			<login-module code="UsersRoles" flag="required"/>
-		</authentication>
-	</security-domain>
 
 ## License
 
