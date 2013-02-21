@@ -30,14 +30,6 @@
 		</auth-constraint>
 	</security-constraint>
 
-	<login-config>
-		<auth-method>FORM</auth-method>
-		<form-login-config>
-			<form-login-page>/login.jsp</form-login-page>
-			<form-error-page>/fail_login.jsp</form-error-page>
-		</form-login-config>
-	</login-config>
-
 	<security-role>
 		<role-name>Admin</role-name>
 	</security-role>
