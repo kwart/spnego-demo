@@ -1,81 +1,222 @@
 # SPNEGO secured web application demo for JBoss AS 7.x
 
-Demo application which shows, how to get Kerberos authentication working in JBboss AS 7.x (or JBoss EAP 6.x)
+Demo application which shows, how to get Kerberos authentication working in JBboss AS 7.x (or JBoss EAP 6.x).
 
 ## How does it work?
 
  * Your web application defines dependency on `org.jboss.security.negotiation` AS module in `META-INF/jboss-deployment-structure.xml`
- * Your web application defines `NegotiationAuthenticator` custom authenticator and a reference to a security domain used for clients authentication in `WEB-INF/jboss-web.xml`. The domain uses the `SPNEGOLoginModule` JAAS login module and it has name `SPNEGO` in this demo.
- * The `SPNEGO` security domain references the second domain which is used for JBoss AS server authentication against a KDC. It uses `Krb5LoginModule` login module and its name is `host`.  
 
-## How to get the sources
+		<jboss-deployment-structure>
+			<deployment>
+				<dependencies>
+					<module name="org.jboss.security.negotiation" />
+				</dependencies>
+			</deployment>
+		</jboss-deployment-structure>
+ * Your web application defines `NegotiationAuthenticator` custom authenticator and a reference to a security domain 
+   used for clients authentication in `WEB-INF/jboss-web.xml`.
 
-You should have [git](http://git-scm.com/) installed
+		<jboss-web>
+			<security-domain>SPNEGO</security-domain>
+			<valve>
+				<class-name>org.jboss.security.negotiation.NegotiationAuthenticator</class-name>
+			</valve>
+		</jboss-web>
 
-	$ git clone git://github.com/kwart/spnego-demo.git
+ * The security domain uses the `SPNEGOLoginModule` JAAS login module and it has name `SPNEGO` in this demo.
 
-or you can download [current sources as a zip file](https://github.com/kwart/spnego-demo/archive/master.zip)
+		<security-domain name="SPNEGO" cache-type="default">
+			<authentication>
+				<login-module code="SPNEGO" flag="required">
+					<module-option name="serverSecurityDomain" value="host"/>
+				</login-module>
+			</authentication>
+			<mapping>
+				<mapping-module code="SimpleRoles" type="role">
+					<module-option name="jduke@JBOSS.ORG" value="Admin"/>
+					<module-option name="hnelson@JBOSS.ORG" value="User"/>
+				</mapping-module>
+			</mapping>
+		</security-domain>
+ * The `SPNEGO` security domain references the second domain which is used for JBoss AS server authentication 
+   in Kerberos. It uses `Krb5LoginModule` login module and its name is `host`.
 
-## How to build it
+		<security-domain name="host" cache-type="default">
+		    <authentication>
+		        <login-module code="Kerberos" flag="required">
+		            <module-option name="storeKey" value="true"/>
+		            <module-option name="refreshKrb5Config" value="true"/>
+		            <module-option name="useKeyTab" value="true"/>
+		            <module-option name="doNotPrompt" value="true"/>
+		            <module-option name="keyTab" value="/tmp/spnego-in-as7/http.keytab"/>
+		            <module-option name="principal" value="HTTP/localhost@JBOSS.ORG"/>
+		        </login-module>
+		    </authentication>
+		</security-domain>
 
-You need to have [Maven](http://maven.apache.org/) installed
+## Prepare your environment
 
-	$ cd spnego-demo
+There are several steps, which should be completed to get the demo working.
+
+### Prepare your system
+
+Install MIT kerberos utils, [Java JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) version 6 or newer,
+[git](http://git-scm.com/) and [Maven](http://maven.apache.org/), unzip and wget.
+
+Fedora:
+
+	$ sudo yum install wget unzip java-1.7.0-openjdk-devel krb5-workstation maven git
+
+Ubuntu:
+
+	$ sudo apt-get install wget unzip openjdk-6-jdk krb5-user git maven
+
+### Prepare your browser
+
+If you use the Firefox, go to `about:config` and set following entries there:
+
+	network.negotiate-auth.delegation-uris = localhost
+	network.negotiate-auth.trusted-uris = localhost
+
+If you use Chromium, then start it with following command line arguments:
+
+	$ chromium-browser --auth-server-whitelist=localhost --auth-negotiate-delegate-whitelist=localhost
+
+### Prepare a folder for your tests
+
+	$ export SPNEGO_TEST_DIR=/tmp/spnego-in-as7
+	$ mkdir $SPNEGO_TEST_DIR
+
+### Prepare the Kerberos server
+
+If you don't have some Kerberos server prepared already, you can use the testing
+[kerberos-using-apacheds](http://github.com/kwart/kerberos-using-apacheds) project:
+
+	$ cd $SPNEGO_TEST_DIR
+	$ git clone git://github.com/kwart/kerberos-using-apacheds.git
+	$ cd kerberos-using-apacheds
 	$ mvn clean package
+	$ cp test.ldif target/kerberos-using-apacheds.jar $SPNEGO_TEST_DIR
 
-## How to install it
+The test server has hardcoded following settings:
 
-### Configure your JBoss AS 7.x
+	searchBaseDn = dc=jboss,dc=org
+	primaryRealm = JBOSS.ORG
+	kdcPrincipal = krbtgt/JBOSS.ORG@JBOSS.ORG
 
-This demo application needs some additional security domains in the JBoss AS:
- * `host` domain is used for JBoss AS server authentication against the KDC (Key Distribution Center)
- * `SPNEGO` domain is used for client authentication against the JBoss AS
-  
-Start your AS:
+#### Start the server and import test data 
 	
+The test server project is a runnable JAR file 
+
+	$ cd $SPNEGO_TEST_DIR
+	$ java -jar kerberos-using-apacheds.jar test.ldif
+
+Launching the test server also creates an `krb5.conf` kerberos konfiguration file in the current folder. We will use it later. 
+
+There are 3 important users which you will use later in the imported `test.ldif` file:
+
+	dn: uid=HTTP,ou=Users,dc=jboss,dc=org
+	userPassword: httppwd
+	krb5PrincipalName: HTTP/${hostname}@JBOSS.ORG
+	
+	dn: uid=hnelson,ou=Users,dc=jboss,dc=org
+	userPassword: secret
+	krb5PrincipalName: hnelson@JBOSS.ORG
+	
+	dn: uid=jduke,ou=Users,dc=jboss,dc=org
+	userPassword: theduke
+	krb5PrincipalName: jduke@JBOSS.ORG
+
+The HTTP user is the principal of your JBoss AS server. The other 2 users are test client principals. 
+The ${hostname} is a placeholder which will be replaced with the value of system property `kerberos.bind.address`.
+It this property is not defined, then the `localhost` value is used.
+
+### Customize the client's krb5.conf
+
+The previous step generated `krb5.conf` file, but you have to either edit your system file `/etc/krb5.conf`
+or set environment variable to the generated one:
+
+	$ export KRB5_CONFIG=$SPNEGO_TEST_DIR/krb5.conf
+
+Correctly provided `krb5.conf` file is necessary for client authentication (`kinit`) and also for correct negotiation 
+in a web browser.
+
+#### Login to Kerberos as hnelson@JBOSS.ORG
+
+Refer to generated `krb5.conf` file and use `kinit` system tool to authenticate in Kerberos.
+
+	$ kinit hnelson@JBOSS.ORG << EOT
+	secret
+	EOT
+
+### Prepare keytab file for the JBoss AS authentication in Kerberos
+
+A keytab is a file containing pairs of Kerberos principals and encrypted keys derived from the Kerberos password.
+Keytab files can be used to log into Kerberos without being prompted for a password (e.g. authenticate without human interaction).
+
+Use the `CreateKeytab` utility from the `kerberos-using-apacheds` project to generate the keytab for the `HTTP/localhost@JBOSS.ORG` principal:
+
+	$ cd $SPNEGO_TEST_DIR
+	$ java -classpath kerberos-using-apacheds.jar org.jboss.test.kerberos.CreateKeytab HTTP/localhost@JBOSS.ORG httppwd http.keytab
+
+You can also use some system utility such as `ktutil` to generate your keytab file.
+
+### Prepare JBoss AS 7.x
+
+Download the [JBoss AS 7.x](http://www.jboss.org/jbossas/downloads) and install it.
+
+	$ cd $SPNEGO_TEST_DIR
+	$ wget http://download.jboss.org/jbossas/7.1/jboss-as-7.1.1.Final/jboss-as-7.1.1.Final.zip
+	$ unzip jboss-as-7.1.1.Final.zip
+	$ export JBOSS_HOME=$SPNEGO_TEST_DIR/jboss-as-7.1.1.Final
+
+Start the AS 7:
+
 	$ cd $JBOSS_HOME/bin
 	$ ./standalone.sh
-	
-Define the new security domains by using JBoss CLI (`jboss-cli.sh` / `jboss-cli.bat`):
 
-	$ cat << EOF > cli-commands.txt
+Configure the AS 7 using management API (CLI):
+
+	$ cd $JBOSS_HOME/bin
+	$ cat << EOT > $SPNEGO_TEST_DIR/cli-commands.txt
 	/subsystem=security/security-domain=host:add(cache-type=default)
-	/subsystem=security/security-domain=host/authentication=classic:add( \
-		login-modules=[{"code"=>"Kerberos", "flag"=>"required", "module-options"=>[ \
-		("debug"=>"true"),\
-		("storeKey"=>"true"),\
-		("refreshKrb5Config"=>"true"),\
-		("useKeyTab"=>"true"),\
-		("doNotPrompt"=>"true"),\
-		("keyTab"=>"$JBOSS_HOME/http.keytab"),\
-		("principal"=>"HTTP/localhost@JBOSS.ORG")\
-	]}]) {allow-resource-service-restart=true}
+	/subsystem=security/security-domain=host/authentication=classic:add(login-modules=[{"code"=>"Kerberos", "flag"=>"required", "module-options"=>[ ("debug"=>"true"),("storeKey"=>"true"),("refreshKrb5Config"=>"true"),("useKeyTab"=>"true"),("doNotPrompt"=>"true"),("keyTab"=>"$SPNEGO_TEST_DIR/http.keytab"),("principal"=>"HTTP/localhost@JBOSS.ORG")]}]) {allow-resource-service-restart=true}
 	
 	/subsystem=security/security-domain=SPNEGO:add(cache-type=default)
-	/subsystem=security/security-domain=SPNEGO/authentication=classic:add( \
-		login-modules=[{"code"=>"SPNEGO", "flag"=>"required", "module-options"=>[ \
-		("password-stacking"=>"useFirstPass"),\
-		("serverSecurityDomain"=>"host")\
-	]}]) {allow-resource-service-restart=true}
-	/subsystem=security/security-domain=SPNEGO/mapping=classic:add( \
-		mapping-modules=[{"code"=>"SimpleRoles", "type"=>"role", "module-options"=>[ \
-		("jduke@JBOSS.ORG"=>"Admin"),\
-		("hnelson@JBOSS.ORG"=>"User"),\
-	]}]) {allow-resource-service-restart=true}
+	/subsystem=security/security-domain=SPNEGO/authentication=classic:add(login-modules=[{"code"=>"SPNEGO", "flag"=>"required", "module-options"=>[("serverSecurityDomain"=>"host")]}]) {allow-resource-service-restart=true}
+	/subsystem=security/security-domain=SPNEGO/mapping=classic:add(mapping-modules=[{"code"=>"SimpleRoles", "type"=>"role", "module-options"=>[("jduke@JBOSS.ORG"=>"Admin"),("hnelson@JBOSS.ORG"=>"User")]}]) {allow-resource-service-restart=true}
 	
-	/system-property=java.security.krb5.conf:add(value="$JBOSS_HOME/krb5.conf")
+	/system-property=java.security.krb5.conf:add(value="$SPNEGO_TEST_DIR/krb5.conf")
 	/system-property=java.security.krb5.debug:add(value=true)
 	/system-property=jboss.security.disable.secdomain.option:add(value=true)
 	
 	:reload()
 	EOT
-	$ ./jboss-cli.sh -c --file=cli-commands.txt
+	$ ./jboss-cli.sh -c --file=$SPNEGO_TEST_DIR/cli-commands.txt
 
-### Deploy the secured-webapp.war web application
+You've created `host` and `SPNEGO` security domains now. Also some kerberos authentication related system properties were added.
 
-Copy the `target/secured-webapp.war` to the `$JBOSS_HOME/standalone/deployments`.
+## Prepare and deploy the demo application
 
-Open the application URL in the browser. E.g. [http://localhost:8080/secured-webapp/](http://localhost:8080/secured-webapp/)
+Use this `spnego-demo` web application to test your settings.
+
+	$ cd $SPNEGO_TEST_DIR
+	$ git clone git://github.com/kwart/spnego-demo.git
+	$ cd spnego-demo
+	$ mvn clean package
+	$ cp target/spnego-demo.war $JBOSS_HOME/standalone/deployments 
+
+## Test the application
+
+Open the application URL in your SPNEGO enabled  browser
+
+	$ chromium-browser --auth-server-whitelist=localhost --auth-negotiate-delegate-whitelist=localhost http://localhost:8080/spnego-demo/
+
+There are 3 test pages included:
+
+ * [Home page](http://localhost:8080/spnego-demo/) is unprotected
+ * [User page](http://localhost:8080/spnego-demo/user/) is reachable by Admin and User role (so both `jduke@JBOSS.ORG` and `hnelson@JBOSS.ORG` should have access)
+ * [Admin page](http://localhost:8080/spnego-demo/admin/) is reachable only by Admin role (only `jduke@JBOSS.ORG` should have access)
 
 ## License
 
