@@ -7,8 +7,8 @@
 	<packaging>war</packaging>
 	<version>0.1-SNAPSHOT</version>
 
-	<name>secured-webapp Maven Webapp</name>
-	<url>http://maven.apache.org</url>
+	<name>spnego-demo</name>
+	<url>https://github.com/kwart/spnego-demo</url>
 
 	<build>
 		<finalName>spnego-demo</finalName>
@@ -44,21 +44,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.jboss.spec.javax.servlet</groupId>
-			<artifactId>jboss-servlet-api_3.0_spec</artifactId>
-			<version>1.0.1.Final</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.spec.javax.servlet.jsp</groupId>
-			<artifactId>jboss-jsp-api_2.2_spec</artifactId>
-			<version>1.0.1.Final</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.spec.javax.annotation</groupId>
-			<artifactId>jboss-annotations-api_1.1_spec</artifactId>
-			<version>1.0.1.Final</version>
+			<groupId>org.picketbox</groupId>
+			<artifactId>picketbox</artifactId>
+			<version>4.0.17.Final</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
