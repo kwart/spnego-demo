@@ -23,5 +23,10 @@ Principal: ${empty pageContext.request.userPrincipal ?"": pageContext.request.us
 	<li><a href="<c:url value='/admin/'/>">Admin page</a> - only
 		users with Admin role can access it</li>
 </ul>
+There is also a servlet which prints current status of HttpSession
+<a href="<c:url value='/SessionStatusCheckServlet'/>">unprotected version</a> and a version which 
+<a href="<c:url value='/user/SessionStatusCheckServlet'/>">requires User or Admin role</a> 
+
+- check session status - unprotected
 </body>
 </html>
