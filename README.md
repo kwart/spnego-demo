@@ -111,7 +111,7 @@ The test server project is a runnable JAR file
 	$ cd $SPNEGO_TEST_DIR
 	$ java -jar kerberos-using-apacheds.jar test.ldif
 
-Launching the test server also creates an `krb5.conf` kerberos konfiguration file in the current folder. We will use it later. 
+Launching the test server also creates an `krb5.conf` kerberos configuration file in the current folder. We will use it later.
 
 There are 3 important users which you will use later in the imported `test.ldif` file:
 
@@ -133,12 +133,12 @@ It this property is not defined, then the `localhost` value is used.
 
 ### Customize the client's krb5.conf
 
-The previous step generated `krb5.conf` file, but you have to either edit your system file `/etc/krb5.conf`
-or set environment variable to the generated one:
+The previous step generated `krb5.conf` file. Backup your original configuration in `/etc/krb5.conf` and replace it with the generated one.
 
-	$ export KRB5_CONFIG=$SPNEGO_TEST_DIR/krb5.conf
+	$ mv /etc/krb5.conf /etc/krb5.conf.orig
+	$ cp $SPNEGO_TEST_DIR/krb5.conf /etc/krb5.conf
 
-Correctly provided `krb5.conf` file is necessary for client authentication (`kinit`) and also for correct negotiation 
+Correct configuration in `krb5.conf` file is necessary for client authentication (`kinit`) and also for correct negotiation
 in a web browser.
 
 #### Login to Kerberos as hnelson@JBOSS.ORG
