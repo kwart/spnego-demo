@@ -31,6 +31,10 @@
 		</auth-constraint>
 	</security-constraint>
 
+	<login-config>
+		<auth-method>SPNEGO</auth-method>
+	</login-config>
+
 	<security-role>
 		<role-name>Admin</role-name>
 	</security-role>
