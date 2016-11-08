@@ -203,7 +203,11 @@ Use the `CreateKeytab` utility from the `kerberos-using-apacheds` project to gen
 
 ```bash
 cd $SPNEGO_TEST_DIR
-java -classpath kerberos-using-apacheds.jar org.jboss.test.kerberos.CreateKeytab HTTP/localhost@JBOSS.ORG httppwd http.keytab
+java -classpath kerberos-using-apacheds.jar \
+  org.jboss.test.kerberos.CreateKeytab \
+  HTTP/localhost@JBOSS.ORG \
+  httppwd \
+  http.keytab
 ```
 
 You can also use some system utility such as `ktutil` to generate your keytab file.
@@ -266,7 +270,8 @@ cp target/spnego-demo.war $JBOSS_HOME/standalone/deployments
 Open the application URL in your SPNEGO enabled  browser
 
 ```bash
-chromium-browser --auth-server-whitelist=localhost --auth-negotiate-delegate-whitelist=localhost http://localhost:8080/spnego-demo/
+chromium-browser --auth-server-whitelist=localhost \
+  --auth-negotiate-delegate-whitelist=localhost http://localhost:8080/spnego-demo/
 ```
 
 There are 3 test pages included:
