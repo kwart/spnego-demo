@@ -24,18 +24,14 @@ EOT
 echo "Genereate keytab for $JBOSS_SPN"
 java -classpath kerberos-using-apacheds.jar org.jboss.test.kerberos.CreateKeytab $JBOSS_SPN httppwd http.keytab
 
-echo "Install JBoss AS7"
+echo "Install WildFly"
 cd "$SPNEGO_TEST_DIR"
 wget "${JBOSS_INST}"
 unzip -q "${JBOSS_INST##*/}"
 
-echo "Starting JBoss AS7"
-cd "$JBOSS_HOME/bin"
-./standalone.sh > "$SPNEGO_TEST_DIR/jboss_as.out" 2>&1 &
-sleep 10
-
-echo "Configuring JBoss AS7"
+echo "Configuring WildFly"
 cat << EOT > "$SPNEGO_TEST_DIR/cli-commands.txt"
+embed-server
 /subsystem=security/security-domain=host:add(cache-type=default)
 /subsystem=security/security-domain=host/authentication=classic:add(login-modules=[{"code"=>"Kerberos", "flag"=>"required", "module-options"=>[ ("debug"=>"true"),("storeKey"=>"true"),("refreshKrb5Config"=>"true"),("useKeyTab"=>"true"),("doNotPrompt"=>"true"),("keyTab"=>"$SPNEGO_TEST_DIR/http.keytab"),("principal"=>"$JBOSS_SPN")]}]) {allow-resource-service-restart=true}
 
@@ -46,16 +42,14 @@ cat << EOT > "$SPNEGO_TEST_DIR/cli-commands.txt"
 /system-property=java.security.krb5.conf:add(value="$SPNEGO_TEST_DIR/krb5.conf")
 /system-property=java.security.krb5.debug:add(value=true)
 /system-property=jboss.security.disable.secdomain.option:add(value=true)
-
-:reload()
 EOT
-./jboss-cli.sh -c "--file=$SPNEGO_TEST_DIR/cli-commands.txt"
-sleep 3
+"$JBOSS_HOME/bin/jboss-cli.sh" "--file=$SPNEGO_TEST_DIR/cli-commands.txt" 2>&1 | tee jboss_as_config.out
+
+echo "Starting WildFly"
+"$JBOSS_HOME/bin/standalone.sh" > "$SPNEGO_TEST_DIR/jboss_as.out" 2>&1 &
 
 cd "$SPNEGO_TEST_DIR"
 git clone git://github.com/kwart/spnego-demo.git
 cd spnego-demo
 mvn clean package
 cp target/spnego-demo.war "$JBOSS_HOME/standalone/deployments/"
-
-$BROWSER http://$BIND_ADDRESS:8080/spnego-demo/
