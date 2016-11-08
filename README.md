@@ -1,4 +1,4 @@
-# SPNEGO secured web application demo for JBoss EAP 6.x, WildFly 8.x or JBoss AS 7.x
+# SPNEGO secured web application demo for JBoss EAP & WildFly
 
 Demo application which shows, how to get Kerberos authentication working in JBboss Application Server.
 
