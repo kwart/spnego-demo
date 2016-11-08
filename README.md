@@ -70,7 +70,7 @@ was resolved in WildFly 10. If you need to get SPNEGO working with WildFly 8.x/9
                 <module-option name="refreshKrb5Config" value="true"/>
                 <module-option name="useKeyTab" value="true"/>
                 <module-option name="doNotPrompt" value="true"/>
-                <module-option name="keyTab" value="/tmp/spnego-in-as7/http.keytab"/>
+                <module-option name="keyTab" value="/tmp/spnego-demo-testdir/http.keytab"/>
                 <module-option name="principal" value="HTTP/localhost@JBOSS.ORG"/>
             </login-module>
         </authentication>
@@ -212,29 +212,17 @@ java -classpath kerberos-using-apacheds.jar \
 
 You can also use some system utility such as `ktutil` to generate your keytab file.
 
-### Prepare JBoss AS 7.x
+### Prepare WildFly
 
-Download the [JBoss AS 7.x](http://www.jboss.org/jbossas/downloads) and install it.
+Download the latest [WildFly](http://wildfly.org/downloads/) and install it.
 
-```bash
-cd $SPNEGO_TEST_DIR
-wget http://download.jboss.org/jbossas/7.1/jboss-as-7.1.1.Final/jboss-as-7.1.1.Final.zip
-unzip jboss-as-7.1.1.Final.zip
-export JBOSS_HOME=$SPNEGO_TEST_DIR/jboss-as-7.1.1.Final
-```
-
-Start the AS 7:
+Configure the server using JBoss CLI:
 
 ```bash
-cd $JBOSS_HOME/bin
-./standalone.sh
-```
+export JBOSS_HOME=/path/to/wildflyFolder
 
-Configure the AS 7 using management API (CLI):
-
-```bash
-cd $JBOSS_HOME/bin
 cat << EOT > $SPNEGO_TEST_DIR/cli-commands.txt
+embed-server
 /subsystem=security/security-domain=host:add(cache-type=default)
 /subsystem=security/security-domain=host/authentication=classic:add(login-modules=[{"code"=>"Kerberos", "flag"=>"required", "module-options"=>[ ("debug"=>"true"),("storeKey"=>"true"),("refreshKrb5Config"=>"true"),("useKeyTab"=>"true"),("doNotPrompt"=>"true"),("keyTab"=>"$SPNEGO_TEST_DIR/http.keytab"),("principal"=>"HTTP/localhost@JBOSS.ORG")]}]) {allow-resource-service-restart=true}
 
@@ -245,11 +233,16 @@ cat << EOT > $SPNEGO_TEST_DIR/cli-commands.txt
 /system-property=java.security.krb5.conf:add(value="$SPNEGO_TEST_DIR/krb5.conf")
 /system-property=java.security.krb5.debug:add(value=true)
 /system-property=jboss.security.disable.secdomain.option:add(value=true)
-
-:reload()
 EOT
-./jboss-cli.sh -c --file=$SPNEGO_TEST_DIR/cli-commands.txt
+"$JBOSS_HOME/jboss-cli.sh" --file=$SPNEGO_TEST_DIR/cli-commands.txt
 ```
+
+Start the configured WildFly server:
+
+```bash
+$JBOSS_HOME/bin/standalone.sh
+```
+
 
 You've created `host` and `SPNEGO` security domains now. Also some kerberos authentication related system properties were added.
 
